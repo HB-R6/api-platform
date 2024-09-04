@@ -2,14 +2,27 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
 use App\Repository\ArticleRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
-#[ApiResource(normalizationContext: ['groups' => ['articles:read']])]
+#[ApiResource(
+    normalizationContext: ['groups' => ['articles:read']],
+    operations: [
+        new Post(security: "is_granted('ROLE_ADMIN')"),
+        new GetCollection(),
+        new Get()
+    ]
+)]
+#[ApiFilter(SearchFilter::class, properties: ['title' => 'ipartial'])]
 class Article
 {
     #[ORM\Id]
@@ -39,6 +52,7 @@ class Article
     #[ORM\ManyToOne(inversedBy: 'articles')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['articles:read'])]
+    #[ApiFilter(SearchFilter::class, properties: ['category.name' => 'ipartial'])]
     private ?Category $category = null;
 
     #[ORM\ManyToOne(inversedBy: 'articles')]
